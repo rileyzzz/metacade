@@ -217,7 +217,7 @@ void Arcade::CJavascriptVMInstance::init()
 
 	if ( !xvalue.IsEmpty() && xvalue.ToLocalChecked()->IsNumber() )
 	{
-		v8::Local<v8::Number> xvaluenumber = xvalue.ToLocalChecked()->ToNumber();
+		v8::Local<v8::Number> xvaluenumber = xvalue.ToLocalChecked()->ToNumber(isolate);
 		float x = xvaluenumber->Value();
 		log(LOG_MESSAGE, "X = %f", x);
 	}
