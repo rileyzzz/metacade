@@ -194,6 +194,8 @@ void CRendererGL::render(class IDrawBuffer* buffer)
 	/*std::cout << "Render: " << renderBuffer->getNumVertices() << " vertices, " << renderBuffer->getNumIndices() << " indices, "
 		<< buffer->getNumRenderBatches() << " batches" << std::endl;*/
 	
+	//change later
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, referencedimage->getWidth(), referencedimage->getHeight(), 0, GL_RGBA, GL_UNSIGNED_BYTE, referencedimage->getPixels());
 
 	const CVertex2D* vertices = renderBuffer->getVertices();
 	const uint16* indices = renderBuffer->getIndices();
@@ -302,6 +304,7 @@ private:
 
 class ITexture* CRendererGL::loadTexture(class IRenderer*, class IImage* imagesource)
 {
+	referencedimage = imagesource;
 	auto found = _textureRemap.find(imagesource->getID());
 	if ( found != _textureRemap.end() ) 
 	{
