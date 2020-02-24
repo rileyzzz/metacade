@@ -152,6 +152,51 @@ void CDrawInterface::rect(const CRectData& data, const CAssetRef* asset)
 	quad->transform(xformTop());
 }
 
+void CDrawInterface::image(const CImageData& data, const CAssetRef* asset)
+{
+	if (!valid()) return;
+
+	CRenderElement& el = _renderer->addRenderElement();
+	//CImageAsset* buffertexture;
+	//shared_ptr<CImageAsset> buffertexture = shared_ptr<CImageAsset>(makeShared<CImageAsset>());
+	CImageAsset* buffertexture = (CImageAsset*)asset->get();
+	if (data.frame)
+	{
+		buffertexture->setImagePixels(PFM_RGBA8, 4, data._w, data._h, data.frame);
+	}
+	
+	_material._baseTexture = resolveTextureID(asset);
+
+	CRenderQuad* quad = &el.makeQuad2(_enableClipping ? clipTop() : CClipShape::disabled(), *this, _layer);
+	CVertex2D* verts = quad->_verts;
+
+	verts[0]._position._x = data._x;
+	verts[0]._position._y = data._y;
+	verts[0]._texcoord._x = 0.f;
+	verts[0]._texcoord._y = 0.f;
+	verts[0]._color._irgba = _currentColor._irgba;
+
+	verts[1]._position._x = data._x + data._w;
+	verts[1]._position._y = data._y;
+	verts[1]._texcoord._x = 1.f;
+	verts[1]._texcoord._y = 0.f;
+	verts[1]._color._irgba = _currentColor._irgba;
+
+	verts[2]._position._x = data._x + data._w;
+	verts[2]._position._y = data._y + data._h;
+	verts[2]._texcoord._x = 1.f;
+	verts[2]._texcoord._y = 1.f;
+	verts[2]._color._irgba = _currentColor._irgba;
+
+	verts[3]._position._x = data._x;
+	verts[3]._position._y = data._y + data._h;
+	verts[3]._texcoord._x = 0.f;
+	verts[3]._texcoord._y = 1.f;
+	verts[3]._color._irgba = _currentColor._irgba;
+
+	quad->transform(xformTop());
+}
+
 void CDrawInterface::sprite(const CSpriteData& data, const CAssetRef* asset)
 {
 	if ( !valid() ) return;
@@ -274,6 +319,33 @@ static void drawRect(const v8::FunctionCallbackInfo<v8::Value>& args)
 	if ( args.Length() > 8 ) rect._v1 = (float) v8::Local<v8::Number>::Cast(args[8])->Value();
 
 	draw->rect( rect, ( args.Length() > 4 ) ? getJSUserdataValuePtr<CAssetRef>( args[4] ) : nullptr );
+}
+
+static void drawImage(const v8::FunctionCallbackInfo<v8::Value>& args)
+{
+	//_r.image(x,y,w,h,buffer, tempimage)
+	v8::Isolate* isolate = args.GetIsolate();
+	v8::HandleScope scope(isolate);
+
+	if (args.Length() < 5)
+	{
+		jsThrow(isolate, "_r.image requires at least 5 arguments");
+		return;
+	}
+
+	CDrawInterface* draw = getJSUserdataPtr<CDrawInterface>(args.Holder());
+	if (draw == nullptr) return;
+
+	CDrawInterface::CImageData rect;
+	rect._x = (float)v8::Local<v8::Number>::Cast(args[0])->Value();
+	rect._y = (float)v8::Local<v8::Number>::Cast(args[1])->Value();
+	rect._w = (float)v8::Local<v8::Number>::Cast(args[2])->Value();
+	rect._h = (float)v8::Local<v8::Number>::Cast(args[3])->Value();
+
+	v8::Local<v8::Uint8ClampedArray> arr = v8::Local<v8::Uint8ClampedArray>::Cast(args[4]);
+	rect.frame = (uint8*)arr->Buffer()->GetContents().Data();
+
+	draw->image(rect, getJSUserdataValuePtr<CAssetRef>(args[5]));
 }
 
 static void drawSprite(const v8::FunctionCallbackInfo<v8::Value>& args)
@@ -559,6 +631,11 @@ v8::Local<v8::ObjectTemplate> Arcade::getJSDrawWrapper(v8::Isolate* isolate)
 	wrapper->Set(
 		v8::String::NewFromUtf8( isolate, "rect", v8::NewStringType::kNormal ).ToLocalChecked(),
 		v8::FunctionTemplate::New( isolate, drawRect )
+	);
+
+	wrapper->Set(
+		v8::String::NewFromUtf8(isolate, "image", v8::NewStringType::kNormal).ToLocalChecked(),
+		v8::FunctionTemplate::New(isolate, drawImage)
 	);
 
 	wrapper->Set(

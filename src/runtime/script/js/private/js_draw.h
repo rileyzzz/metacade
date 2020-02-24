@@ -57,6 +57,13 @@ namespace Arcade
 			{}
 		};
 
+		struct CImageData
+		{
+			float _x, _y;
+			float _w, _h;
+			uint8* frame;
+		};
+
 		struct CSpriteData : public CRectData
 		{
 			float _r;
@@ -79,6 +86,7 @@ namespace Arcade
 		CClipShape& clipTop();
 
 		void rect(const CRectData& data, const CAssetRef* asset);
+		void image(const CImageData& data, const CAssetRef* asset);
 		void sprite(const CSpriteData& data, const CAssetRef* asset);
 		void quad(CRenderQuad& data, const CAssetRef* asset);
 		bool valid() const;
